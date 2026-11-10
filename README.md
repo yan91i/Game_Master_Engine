@@ -1,4 +1,4 @@
-# An AI Memory Scanner
+# AI Memory Scanner
 
 复刻 Cheat Engine 核心功能（扫描 → 过滤 → 修改 / 冻结），并加入 AI 辅助定位难找的数值。
 **仅用于单机程序、自己开发的程序调试或学习。不要用于联网游戏**（违反服务条款，且会被反作弊封号）。
