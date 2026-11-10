@@ -1,5 +1,63 @@
 # AI Memory Scanner
 
+A Python tool that does Cheat Engine's core job (scan → filter → modify / freeze values) and adds AI help for values that are hard to locate.
+**Use it only on offline programs, or for debugging and learning with software you wrote. Do not use it on online games.** Doing so breaks their terms of service, and anti-cheat will get your account banned.
+
+## Requirements
+- Windows 10/11 and **64-bit Python 3.9+**. You don't need admin rights: `run.bat` installs numpy with `pip install --user`.
+- The scanner can only attach to processes running at the same privilege level as itself. If the target runs as administrator, run this tool as administrator too.
+
+## Files
+| File | Purpose |
+|---|---|
+| `app.py` | GUI (tkinter) |
+| `winmem.py` | Windows API calls: process list, memory region listing, memory read/write |
+| `scanner.py` | Scan engine (vectorised with numpy; aligned and unaligned scans) |
+| `tracker.py` | Records candidate values over time and scores them locally |
+| `ai_assistant.py` | AI client for any OpenAI-compatible API (SiliconFlow / Ollama / DeepSeek / OpenAI) |
+| `config.json` | AI settings (you can also change these under "AI Settings" in the app) |
+
+## Basic usage (same as Cheat Engine)
+1. Click "Select Process" and double-click the target process.
+2. If you know the value: set the type to "4 Bytes" and the scan type to "Exact Value", enter 100, then click "First Scan".
+3. Make the value change in the game (e.g. 100 → 90). Enter 90 and click "Next Scan". Repeat until only a few results remain.
+4. Double-click a result to add it to the address list. In the list, double-click an entry to change its value, or use "Freeze/Unfreeze" to lock it.
+
+Scan types:
+- **First scan**: Exact, Bigger Than, Smaller Than, Between, Unknown Initial Value.
+- **Next scan**: Increased, Decreased, Increased By X, Decreased By X, Changed, Unchanged. You can also use Exact, Bigger Than, Smaller Than or Between again.
+
+## AI features
+
+### 1. Natural-language scan assistant
+In the right-hand panel, describe what you see. The AI reads the current scan state and suggests the next step. Click "Execute AI Suggestion" to run it, or tick "Auto Execute". Examples:
+- "My gold is 1250" → First Scan, Exact Value, int32, 1250
+- "The health bar shows no number" → Unknown Initial Value scan
+- "I just got hit" → Decreased
+- "I did nothing" → Unchanged
+- "Exact scan finds nothing" → the AI suggests trying float/double, checking whether the value is scaled (×10 / ×100), or using a Between scan
+
+### 2. Behaviour tracking + AI ranking (when dozens or hundreds of candidates are left)
+1. When 2,000 candidates or fewer remain, click "Start Tracking". The app records every candidate's value in the background every 0.2 s.
+2. Fill in "Target Description" (e.g. Health) and "Event Name" (e.g. Took damage).
+3. Go back to the game and do the action. **Press F8 right after each action.** F8 is a global hotkey, so it works while the game is in front. You can change the event name between actions, e.g. to "Drank potion".
+4. Leave some stretches where you do nothing. This lets the tool rule out values that change all the time, such as timers and coordinates.
+5. Click "AI Analyze Candidates":
+   - The app first works out locally whether each value changed after events, how often it changed with no event, and how much it changed at each event.
+   - The AI then judges by what each event means (damage → decrease, potion → increase), whether the changes are consistent, and whether the value range is plausible.
+   - The top 3 are added to the address list. Change each one and see which actually takes effect in the game. This tells you the real value apart from any display-only copy.
+
+Only statistics (addresses, values and changes) are sent to the AI, never raw memory contents.
+To run offline on your own machine, use Ollama: go to "AI Settings" and choose the "Ollama (Local)" preset.
+
+## Known limitations
+- An "Unknown Initial Value" scan copies all writable memory, so large games can use several GB of RAM. Untick "Include mapped memory" first.
+- There's no pointer scanning, code injection or debugger breakpoints, so you can't find out what writes to an address.
+- If the value is encrypted (e.g. XOR) or moves to a new address each session, you have to scan again each time.
+
+
+# AI Memory Scanner
+
 复刻 Cheat Engine 核心功能（扫描 → 过滤 → 修改 / 冻结），并加入 AI 辅助定位难找的数值。
 **仅用于单机程序、自己开发的程序调试或学习。不要用于联网游戏**（违反服务条款，且会被反作弊封号）。
 
